@@ -2,14 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "./index.js",
+      "src": "./index.js",  // Đảm bảo rằng đây là file chính khởi động ứng dụng
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "/"
+      "src": "/api/(.*)",  // Chuyển hướng tất cả các yêu cầu bắt đầu bằng /api đến ứng dụng
+      "dest": "/index.js"
+    },
+    {
+      "src": "/(.*)",  // Tất cả các yêu cầu khác sẽ chuyển đến ứng dụng
+      "dest": "/index.js"
     }
   ]
 }
