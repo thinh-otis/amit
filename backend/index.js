@@ -11,17 +11,19 @@ const Traffic = require('./models/Traffic');
 
 const app = express();
 
-// Middleware
-app.use(helmet()); // Tăng cường bảo mật
-app.use(cors({
+
+const corsOptions ={
     origin: 'http://localhost:3000', // URL frontend cho CORS
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true // Cho phép gửi cookie
-}));
-app.use(express.json()); // Parse JSON request body
-app.use(cookieParser()); // Để xử lý cookies
-app.use(morgan('dev')); // Logging cho requests
-app.use(express.static(path.join(__dirname, '../frontend/build'))); // Phục vụ file tĩnh
+};
+// Middleware
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(cookieParser());
+app.use(helmet());
+app.use(morgan('dev'));
+app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // Kiểm tra biến môi trường
 if (!process.env.FRONTEND_URL || !process.env.TOKEN_SECRET_KEY) {
