@@ -6,36 +6,33 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 const router = require('./routes');
-const Traffic = require('./models/Traffic');
 const path = require('path');
-
+const Traffic = require('./models/Traffic');
 
 const app = express();
 
+// Middleware
+app.use(helmet()); // Tăng cường bảo mật
+app.use(cors({
+    origin: 'http://localhost:3000', // URL frontend cho CORS
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true // Cho phép gửi cookie
+}));
+app.use(express.json()); // Parse JSON request body
+app.use(cookieParser()); // Để xử lý cookies
+app.use(morgan('dev')); // Logging cho requests
+app.use(express.static(path.join(__dirname, '../frontend/build'))); // Phục vụ file tĩnh
+
+// Kiểm tra biến môi trường
+if (!process.env.FRONTEND_URL || !process.env.TOKEN_SECRET_KEY) {
+    console.error('Environment variables are not defined correctly.');
+    process.exit(1);
+}
+
+// Endpoint cơ bản
 app.get('/', (req, res) => {
     res.send('Server is running!');
 });
-
-// Kiểm tra biến môi trường
-if (!process.env.FRONTEND_URL) {
-    console.error('FRONTEND_URL is not defined in .env');
-    process.exit(1); // Dừng server nếu không có biến môi trường
-}
-
-// Cors
-const corsOptions = {
-    origin: 'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true,
-};
-
-// Middleware
-app.use(cors(corsOptions));
-app.use(express.json());
-app.use(cookieParser());
-app.use(helmet());
-app.use(morgan('dev')); 
-app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // Endpoint để lấy dữ liệu lượng truy cập
 app.get('/api/traffic-data', async (req, res) => {
@@ -55,6 +52,7 @@ app.post('/api/track-traffic', async (req, res) => {
         const currentMonth = currentDate.getMonth();
         const currentYear = currentDate.getFullYear();
 
+        // Kiểm tra traffic trong tháng
         const trafficData = await Traffic.find();
         const monthlyData = trafficData.filter(item => {
             const itemDate = new Date(item.date);
@@ -73,12 +71,12 @@ app.post('/api/track-traffic', async (req, res) => {
         await newTraffic.save();
         res.status(201).send('Traffic recorded successfully');
     } catch (error) {
-        console.error('Error tracking traffic', error);
+        console.error('Error tracking traffic:', error);
         res.status(500).send('Error tracking traffic');
     }
 });
 
-// Kết nối với MongoDB và khởi động server
+// Kết nối với MongoDB
 const startServer = async () => {
     try {
         await connectDB();
@@ -106,7 +104,12 @@ const startServer = async () => {
 };
 
 // Routes
-app.use("/api", router);
+app.use("/api", router); // Khai báo routes
+
+// Route để phục vụ index.html cho tất cả các yêu cầu không phải API
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+});
 
 // Xử lý lỗi
 app.use((err, req, res, next) => {
@@ -114,11 +117,5 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// Route để phục vụ index.html cho tất cả các yêu cầu không phải API
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-});
-
 // Khởi động server
 startServer();
-
