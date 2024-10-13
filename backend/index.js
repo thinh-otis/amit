@@ -11,6 +11,16 @@ const Traffic = require('./models/Traffic');
 
 const app = express();
 
+// Endpoint cơ bản
+app.get('/', (req, res) => {
+    res.send('Server is running!');
+});
+
+// Kiểm tra biến môi trường
+if (!process.env.FRONTEND_URL || !process.env.TOKEN_SECRET_KEY) {
+    console.error('Environment variables are not defined correctly.');
+    process.exit(1);
+}
 
 const corsOptions ={
     origin: 'http://localhost:3000', // URL frontend cho CORS
@@ -24,17 +34,6 @@ app.use(cookieParser());
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.static(path.join(__dirname, '../frontend/build')));
-
-// Kiểm tra biến môi trường
-if (!process.env.FRONTEND_URL || !process.env.TOKEN_SECRET_KEY) {
-    console.error('Environment variables are not defined correctly.');
-    process.exit(1);
-}
-
-// Endpoint cơ bản
-app.get('/', (req, res) => {
-    res.send('Server is running!');
-});
 
 // Endpoint để lấy dữ liệu lượng truy cập
 app.get('/api/traffic-data', async (req, res) => {
